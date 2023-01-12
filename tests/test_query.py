@@ -7,34 +7,21 @@ from fastapi import HTTPException
 from app.api import crud
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_data():
-    """Create toy data for two subjects for testing."""
-    data = [
+    """Create toy data for two datasets for testing."""
+    return [
         {
-            "number_session": "test1",
-            "modality": "test1",
-            "subject": "test1",
-            "sub_id": "test1",
-            "sex": "test1",
-            "diagnosis": "test1",
-            "dataset_name": "test1",
-            "dataset": "test1",
-            "age": "test1",
+            "dataset": "http://neurobagel.org/vocab/qpn",
+            "dataset_name": "QPN",
+            "num_matching_subjects": 50,
         },
         {
-            "number_session": "test2",
-            "modality": "test2",
-            "subject": "test2",
-            "sub_id": "test2",
-            "sex": "test2",
-            "diagnosis": "test2",
-            "dataset_name": "test2",
-            "dataset": "test2",
-            "age": "test2",
+            "dataset": "http://neurobagel.org/vocab/ppmi",
+            "dataset_name": "PPMI",
+            "num_matching_subjects": 40,
         },
     ]
-    return data
 
 
 @pytest.fixture
@@ -83,12 +70,12 @@ def test_app_with_invalid_environment_vars(test_app, monkeypatch):
 
 
 def test_get_all(test_app, mock_successful_get, monkeypatch):
-    """Given no input for the sex parameter, returns a 200 status code and a non-empty list of results (should correspond to all subjects in graph)."""
+    """Given no input for the sex parameter, returns a 200 status code and at least one dataset with subjects (should correspond to all subjects in graph)."""
 
     monkeypatch.setattr(crud, "get", mock_successful_get)
     response = test_app.get("/query/")
     assert response.status_code == 200
-    assert response.json() != []
+    assert 0 not in [i["num_matching_subjects"] for i in response.json()]
 
 
 @pytest.mark.parametrize(
@@ -98,14 +85,14 @@ def test_get_all(test_app, mock_successful_get, monkeypatch):
 def test_get_valid_age_range(
     test_app, mock_successful_get, valid_age_min, valid_age_max, monkeypatch
 ):
-    """Given a valid age range, returns a 200 status code and a non-empty list of results."""
+    """Given a valid age range, returns a 200 status code and at least one dataset with subjects."""
 
     monkeypatch.setattr(crud, "get", mock_successful_get)
     response = test_app.get(
         f"/query/?age_min={valid_age_min}&age_max={valid_age_max}"
     )
     assert response.status_code == 200
-    assert response.json() != []
+    assert 0 not in [i["num_matching_subjects"] for i in response.json()]
 
 
 @pytest.mark.parametrize(
@@ -115,12 +102,12 @@ def test_get_valid_age_range(
 def test_get_valid_age_single_bound(
     test_app, mock_successful_get, age_keyval, monkeypatch
 ):
-    """Given only a valid lower/upper age bound, returns a 200 status code and a non-empty list of results."""
+    """Given only a valid lower/upper age bound, returns a 200 status code and at least one dataset with subjects."""
 
     monkeypatch.setattr(crud, "get", mock_successful_get)
     response = test_app.get(f"/query/?{age_keyval}")
     assert response.status_code == 200
-    assert response.json() != []
+    assert 0 not in [i["num_matching_subjects"] for i in response.json()]
 
 
 @pytest.mark.parametrize(
@@ -156,12 +143,12 @@ def test_get_invalid_age(
 
 @pytest.mark.parametrize("valid_sex", ["male", "female", "other"])
 def test_get_valid_sex(test_app, mock_successful_get, valid_sex, monkeypatch):
-    """Given a valid sex string, returns a 200 status code and a non-empty list of results."""
+    """Given a valid sex string, returns a 200 status code and at least one dataset with subjects."""
 
     monkeypatch.setattr(crud, "get", mock_successful_get)
     response = test_app.get(f"/query/?sex={valid_sex}")
     assert response.status_code == 200
-    assert response.json() != []
+    assert 0 not in [i["num_matching_subjects"] for i in response.json()]
 
 
 def test_get_invalid_sex(test_app, monkeypatch):
@@ -189,12 +176,12 @@ def test_get_invalid_sex(test_app, monkeypatch):
 def test_get_valid_diagnosis(
     test_app, mock_successful_get, valid_diagnosis, monkeypatch
 ):
-    """Given a valid diagnosis, returns a 200 status code and a non-empty list of results."""
+    """Given a valid diagnosis, returns a 200 status code and at least one dataset with subjects."""
 
     monkeypatch.setattr(crud, "get", mock_successful_get)
     response = test_app.get(f"/query/?diagnosis={valid_diagnosis}")
     assert response.status_code == 200
-    assert response.json() != []
+    assert 0 not in [i["num_matching_subjects"] for i in response.json()]
 
 
 @pytest.mark.parametrize(
@@ -223,12 +210,12 @@ def test_get_invalid_diagnosis(test_app, invalid_diagnosis, monkeypatch):
 def test_get_valid_iscontrol(
     test_app, mock_successful_get, valid_iscontrol, monkeypatch
 ):
-    """Given a valid is_control value, returns a 200 status code and a non-empty list of results."""
+    """Given a valid is_control value, returns a 200 status code and at least one dataset with subjects."""
 
     monkeypatch.setattr(crud, "get", mock_successful_get)
     response = test_app.get(f"/query/?is_control={valid_iscontrol}")
     assert response.status_code == 200
-    assert response.json() != []
+    assert 0 not in [i["num_matching_subjects"] for i in response.json()]
 
 
 def test_get_invalid_iscontrol(test_app, monkeypatch):
@@ -279,14 +266,14 @@ def test_get_invalid_control_diagnosis_pair(test_app, monkeypatch):
 def test_get_valid_min_num_sessions(
     test_app, mock_successful_get, valid_min_num_sessions, monkeypatch
 ):
-    """Given a valid minimum number of imaging sessions, returns a 200 status code and a non-empty list of results."""
+    """Given a valid minimum number of imaging sessions, returns a 200 status code and at least one dataset with subjects."""
 
     monkeypatch.setattr(crud, "get", mock_successful_get)
     response = test_app.get(
         f"/query/?min_num_sessions={valid_min_num_sessions}"
     )
     assert response.status_code == 200
-    assert response.json() != []
+    assert 0 not in [i["num_matching_subjects"] for i in response.json()]
 
 
 @pytest.mark.parametrize("invalid_min_num_sessions", [0, -3, "apple"])
@@ -326,14 +313,14 @@ def test_get_invalid_min_num_sessions(
 def test_get_valid_available_image_modal(
     test_app, mock_successful_get, valid_available_image_modal, monkeypatch
 ):
-    """Given a valid and available image modality, returns a 200 status code and a non-empty list of results."""
+    """Given a valid and available image modality, returns a 200 status code and at least one dataset with subjects."""
 
     monkeypatch.setattr(crud, "get", mock_successful_get)
     response = test_app.get(
         f"/query/?image_modal={valid_available_image_modal}"
     )
     assert response.status_code == 200
-    assert response.json() != []
+    assert 0 not in [i["num_matching_subjects"] for i in response.json()]
 
 
 @pytest.mark.parametrize(
@@ -343,7 +330,7 @@ def test_get_valid_available_image_modal(
 def test_get_valid_unavailable_image_modal(
     test_app, valid_unavailable_image_modal, monkeypatch
 ):
-    """Given a valid, pre-defined, and unavailable image modality, returns a 200 status code and an empty list of results."""
+    """Given a valid, pre-defined, and unavailable image modality, returns a 200 status code and 0 matching subjects."""
 
     async def mock_get(
         age_min,
@@ -354,14 +341,16 @@ def test_get_valid_unavailable_image_modal(
         min_num_sessions,
         image_modal,
     ):
-        return []
+        return [
+            {"dataset": None, "dataset_name": None, "num_matching_subjects": 0}
+        ]
 
     monkeypatch.setattr(crud, "get", mock_get)
     response = test_app.get(
         f"/query/?image_modal={valid_unavailable_image_modal}"
     )
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json()[0]["num_matching_subjects"] == 0
 
 
 @pytest.mark.parametrize(
